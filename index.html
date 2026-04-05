@@ -2969,7 +2969,7 @@ body::before{
             class="gate-input"
             type="text"
             placeholder="DSM26-XXXX-XXXX"
-            maxlength="20"
+            maxlength="14"
             autocomplete="off"
             autocorrect="off"
             autocapitalize="characters"
@@ -2982,7 +2982,7 @@ body::before{
         </button>
         <div class="gate-divider"></div>
         <div class="gate-footer">
-          Purchased but no key? <span style="color:#e8b84c;font-weight:600;">Email us at persuasionacademybyra@gmail.com</span><br>
+          Purchased but no key? <span style="color:#e8b84c;font-weight:600;">Email us at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="80f0e5f2f3f5e1f3e9efeee1e3e1e4e5edf9e2f9f2e1c0e7ede1e9ecaee3efed">[email&#160;protected]</a></span><br>
           This masterclass is exclusively licensed — not for redistribution.
         </div>
       </div>
@@ -3017,7 +3017,7 @@ body::before{
         </div>
         <div class="copy-stamp-row">
           <span class="copy-stamp-label">Purchase Date</span>
-          <span class="copy-stamp-value">{{PURCHASE_DATE}}</span>
+          <span class="copy-stamp-value" id="copy-date-display">{{PURCHASE_DATE}}</span>
         </div>
         <div class="copy-stamp-row">
           <span class="copy-stamp-label">License No.</span>
@@ -10571,7 +10571,7 @@ body::before{
     </div><!-- /ch-body -->
   </div><!-- /sec-conclusion -->
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ─── LOCKED CHAPTER DATA ───
 const lockedChapters = [
   {
@@ -11218,20 +11218,33 @@ const DSM_SESSION_HOURS = 8;
   if(!ok) document.documentElement.innerHTML = '<body style="background:#03050c;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;"><div style="text-align:center;color:rgba(220,80,80,0.7);"><div style="font-size:48px;margin-bottom:16px;">&#128274;</div><div style="font-size:12px;letter-spacing:0.2em;text-transform:uppercase;">Unauthorised Domain</div></div></body>';
 })();
 
-// ── SESSION CHECK (skip key gate if already verified) ──
+// ── SESSION CHECK (skip key gate if already verified this tab session) ──
 (function dsmSessionCheck(){
   try{
     const session = JSON.parse(sessionStorage.getItem('dsm_session_v3')||'null');
     if(!session) return;
+    // Always clear on fresh page load — require key entry every new tab/visit
+    // Only skip gate if copyright was accepted AND session is within same tab
     if(DSM_SESSION_HOURS > 0){
       const elapsed = (Date.now()-session.loginTime)/(1000*60*60);
-      if(elapsed > DSM_SESSION_HOURS){ sessionStorage.removeItem('dsm_session_v3'); return; }
+      if(elapsed > DSM_SESSION_HOURS){
+        sessionStorage.removeItem('dsm_session_v3');
+        sessionStorage.removeItem('dsm_copyright_accepted');
+        return;
+      }
+    }
+    // Clear session on page reload (F5) — buyer must re-enter key
+    const navEntry = performance && performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    const navType = navEntry ? navEntry.type : '';
+    if(navType === 'reload'){
+      sessionStorage.removeItem('dsm_session_v3');
+      sessionStorage.removeItem('dsm_copyright_accepted');
+      return;
     }
     window._dsmSession = session;
     document.addEventListener('DOMContentLoaded', function(){
       const kg = document.getElementById('dsm-key-gate');
       if(kg) kg.remove();
-      // Check if copyright already accepted this session
       if(sessionStorage.getItem('dsm_copyright_accepted')==='1'){
         const cp = document.getElementById('dsm-copyright-page');
         if(cp) cp.remove();
@@ -11248,7 +11261,7 @@ function submitLicenseKey(){
   const input   = document.getElementById('gate-key-input');
   const errorEl = document.getElementById('gate-error');
   const btn     = document.getElementById('gate-submit-btn');
-  const raw     = (input.value||'').trim().toUpperCase().replace(/\s/g,'');
+  const raw     = (input.value||'').trim().toUpperCase().replace(/[^A-Z0-9-]/g,'');
 
   if(!raw){ dsmGateError('Please enter your license key'); return; }
 
@@ -11346,7 +11359,8 @@ function dsmGrantAccess(key, userData){
     device: navigator.platform || 'Unknown',
     ua: navigator.userAgent.substring(0,60),
     name:  userData.name  || '',
-    email: userData.email || ''
+    email: userData.email || '',
+    date:  userData.date  || ''
   };
   try{ sessionStorage.setItem('dsm_session_v3',JSON.stringify(session)); }catch(e){}
   window._dsmSession = session;
@@ -11362,7 +11376,7 @@ function dsmGrantAccess(key, userData){
     }
   },600);
 }
-function dsmVerifyKeyFormat(k){ return /^[A-Z0-9]{3,6}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(k); }
+function dsmVerifyKeyFormat(k){ return /^[A-Z0-9]{5}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(k); }
 function dsmGateError(msg){ const el=document.getElementById('gate-error'); if(el) el.textContent=msg; }
 
 // ── COPYRIGHT PAGE ─────────────────────────────────────
@@ -11377,11 +11391,13 @@ function dsmShowCopyrightPage(session){
   const licEl  = document.getElementById('copy-license-display');
   const nameEl = document.getElementById('copy-name-display');
   const mailEl = document.getElementById('copy-email-display');
+  const dateEl = document.getElementById('copy-date-display');
   if(devEl)  devEl.textContent  = session.device || navigator.platform || 'Unknown';
   if(sesEl)  sesEl.textContent  = dateStr + ' at ' + timeStr;
   if(licEl && session.key) licEl.textContent = session.key;
   if(nameEl) nameEl.textContent = session.name  || 'Licensed User';
   if(mailEl) mailEl.textContent = session.email || '—';
+  if(dateEl && session.date){ try{ const d=new Date(session.date); dateEl.textContent=d.toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'}); }catch(e){ dateEl.textContent=session.date; } }
   page.style.display='flex';
 }
 function proceedFromCopyright(){
@@ -11472,7 +11488,7 @@ document.addEventListener('DOMContentLoaded',function(){
       const raw=inp.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,13);
       let v=raw;
       if(raw.length>5) v=raw.slice(0,5)+'-'+raw.slice(5);
-      if(raw.length>9) v=v.slice(0,10)+'-'+v.slice(10);
+      if(raw.length>9) v=v.slice(0,10)+'-'+raw.slice(9);
       inp.value=v;
     }
     inp.addEventListener('input',fmtKey);
@@ -11941,15 +11957,4 @@ function drawRadarSvg(svgId, values){
     text.setAttribute('font-weight','700');
     text.setAttribute('letter-spacing','0.09');
     text.setAttribute('fill',labels[i]==='Expression'||labels[i]==='Presence'?'rgba(201,149,58,0.7)':'rgba(138,156,186,0.5)');
-    svg.appendChild(text);
-  });
-}
-
-// Init all radar charts on load
-document.addEventListener('DOMContentLoaded',function(){
-  drawRadarSvg('ch2-radar-svg',[5,5,5,5,5,5,5]);
-  drawRadarSvg('ch4-radar-svg',[5,5,5,5,5,5,5]);
-});
-</script>
-</body>
-</html>
+    svg.app
