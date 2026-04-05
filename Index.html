@@ -2969,7 +2969,7 @@ body::before{
             class="gate-input"
             type="text"
             placeholder="DSM26-XXXX-XXXX"
-            maxlength="14"
+            maxlength="15"
             autocomplete="off"
             autocorrect="off"
             autocapitalize="characters"
@@ -2982,7 +2982,7 @@ body::before{
         </button>
         <div class="gate-divider"></div>
         <div class="gate-footer">
-          Purchased but no key? <span style="color:#e8b84c;font-weight:600;">Email us at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="80f0e5f2f3f5e1f3e9efeee1e3e1e4e5edf9e2f9f2e1c0e7ede1e9ecaee3efed">[email&#160;protected]</a></span><br>
+          Purchased but no key? <span style="color:#e8b84c;font-weight:600;">Email us at <a href="mailto:persuasionacademybyra@gmail.com" style="color:#e8b84c;text-decoration:none;">persuasionacademybyra@gmail.com</a></span>
           This masterclass is exclusively licensed — not for redistribution.
         </div>
       </div>
@@ -10571,7 +10571,7 @@ body::before{
     </div><!-- /ch-body -->
   </div><!-- /sec-conclusion -->
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ─── LOCKED CHAPTER DATA ───
 const lockedChapters = [
   {
@@ -11198,12 +11198,7 @@ const DSM_VALID_KEYS = [
 ];
 
 // Allowed domains (empty = allow all)
-const DSM_ALLOWED_DOMAINS = [
-  'vercel.app',       // covers any *.vercel.app subdomain
-  'netlify.app',      // fallback
-  'github.io',        // covers persuasionacademybyra-ai.github.io
-  // Add your custom domain here later, e.g: 'dsm-course.com'
-];
+const DSM_ALLOWED_DOMAINS = [];
 
 // Session expiry hours (0 = never)
 const DSM_SESSION_HOURS = 8;
@@ -11283,7 +11278,7 @@ function submitLicenseKey(){
 
   // Step 1: Owner / hardcoded keys — bypass API entirely
   if(DSM_VALID_KEYS.includes(raw)){
-    dsmGrantAccess(raw, { name:'Owner', email:atob('cGVyc3Vhc2lvbmFjYWRlbXlieXJhQGdtYWlsLmNvbQ==') });
+    dsmGrantAccess(raw, { name:'Owner', email:atob('cGVyc3Vhc2lvbmFjYWRlbXlieXJhQGdtYWlsLmNvbQ=='), date: new Date().toISOString().split('T')[0] });
     return;
   }
 
@@ -11396,7 +11391,7 @@ function dsmShowCopyrightPage(session){
   if(sesEl)  sesEl.textContent  = dateStr + ' at ' + timeStr;
   if(licEl && session.key) licEl.textContent = session.key;
   if(nameEl) nameEl.textContent = session.name  || 'Licensed User';
-  if(mailEl) mailEl.textContent = session.email || '—';
+  if(mailEl) mailEl.textContent = (session.email && session.email !== '{{BUYER_EMAIL}}') ? session.email : '—';
   if(dateEl && session.date){ try{ const d=new Date(session.date); dateEl.textContent=d.toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'}); }catch(e){ dateEl.textContent=session.date; } }
   page.style.display='flex';
 }
@@ -11416,7 +11411,8 @@ function dsmApplyWatermark(){
   // Prefer live session data (populated from API response or owner key);
   // fall back to meta-tag placeholders only if session data is absent.
   const name    = window._dsmSession?.name  || document.querySelector('meta[name="dsm-licensed-to"]')?.content    || 'Licensed User';
-  const email   = window._dsmSession?.email || document.querySelector('meta[name="dsm-licensed-email"]')?.content || '—';
+  const _rawEmail = window._dsmSession?.email || document.querySelector('meta[name="dsm-licensed-email"]')?.content || '';
+  const email = (_rawEmail && _rawEmail !== '{{BUYER_EMAIL}}') ? _rawEmail : '—';
   const license = window._dsmSession?.key   || document.querySelector('meta[name="dsm-license-number"]')?.content || '{{LICENSE_NUMBER}}';
   // Visible floating watermark removed — traceable data retained in hidden element only
   const hidden = document.getElementById('dsm-watermark');
@@ -11486,9 +11482,9 @@ document.addEventListener('DOMContentLoaded',function(){
     inp.addEventListener('keydown',function(e){ if(e.key==='Enter') submitLicenseKey(); });
     function fmtKey(){
       const raw=inp.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,13);
-      let v=raw;
-      if(raw.length>5) v=raw.slice(0,5)+'-'+raw.slice(5);
-      if(raw.length>9) v=v.slice(0,10)+'-'+raw.slice(9);
+      let v=raw.slice(0,5);
+      if(raw.length>5) v+='-'+raw.slice(5,9);
+      if(raw.length>9) v+='-'+raw.slice(9,13);
       inp.value=v;
     }
     inp.addEventListener('input',fmtKey);
@@ -11953,8 +11949,4 @@ function drawRadarSvg(svgId, values){
     text.setAttribute('text-anchor','middle');
     text.setAttribute('dominant-baseline','middle');
     text.setAttribute('font-family','Barlow,sans-serif');
-    text.setAttribute('font-size','9');
-    text.setAttribute('font-weight','700');
-    text.setAttribute('letter-spacing','0.09');
-    text.setAttribute('fill',labels[i]==='Expression'||labels[i]==='Presence'?'rgba(201,149,58,0.7)':'rgba(138,156,186,0.5)');
-    svg.app
+    
