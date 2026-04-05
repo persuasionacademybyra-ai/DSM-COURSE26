@@ -2969,7 +2969,7 @@ body::before{
             class="gate-input"
             type="text"
             placeholder="DSM26-XXXX-XXXX"
-            maxlength="14"
+            maxlength="15"
             autocomplete="off"
             autocorrect="off"
             autocapitalize="characters"
@@ -11486,9 +11486,9 @@ document.addEventListener('DOMContentLoaded',function(){
     inp.addEventListener('keydown',function(e){ if(e.key==='Enter') submitLicenseKey(); });
     function fmtKey(){
       const raw=inp.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,13);
-      let v=raw;
-      if(raw.length>5) v=raw.slice(0,5)+'-'+raw.slice(5);
-      if(raw.length>9) v=v.slice(0,10)+'-'+raw.slice(9);
+      let v=raw.slice(0,5);
+      if(raw.length>5) v+='-'+raw.slice(5,9);
+      if(raw.length>9) v+='-'+raw.slice(9,13);
       inp.value=v;
     }
     inp.addEventListener('input',fmtKey);
